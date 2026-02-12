@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎥 시험용 화면 녹화 MVP
 
-## Getting Started
+시험 감독을 위한 화면 녹화 시스템 (MVP 버전)
 
-First, run the development server:
+## 📋 프로젝트 개요
+
+이 프로젝트는 시험 중 화면을 녹화하여 감독관이 시험 과정을 확인할 수 있도록 하는 MVP 시스템입니다.
+
+### 주요 기능
+
+- ✅ 전체 화면 녹화 (getDisplayMedia)
+- ✅ 비밀번호 기반 시작
+- ✅ 실시간 녹화 상태 표시
+- ✅ 로컬 파일 저장 (webm 형식)
+- ✅ 전체 화면 강제 확인
+- ✅ 화면 공유 중단 감지
+
+## 🛠️ 기술 스택
+
+- **Framework**: Next.js 16.x (App Router)
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 4.x
+- **APIs**: 
+  - getDisplayMedia API
+  - MediaRecorder API
+  - Blob API
+
+## 📁 프로젝트 구조
+
+```
+screen-record/
+├── app/                    # Next.js App Router 페이지
+│   ├── layout.tsx          # 루트 레이아웃
+│   ├── page.tsx            # [S01] 대기 화면
+│   ├── recording/          # [S03] 시험 진행 화면
+│   └── complete/           # [S04] 시험 종료 화면
+├── components/             # React 컴포넌트
+│   ├── ui/                 # UI 컴포넌트
+│   └── layout/             # 레이아웃 컴포넌트
+├── hooks/                  # 커스텀 훅
+├── contexts/               # Context API
+├── utils/                  # 유틸리티 함수
+├── types/                  # TypeScript 타입 정의
+└── docs/                   # 문서
+```
+
+## 🚀 시작하기
+
+### 설치
+
+```bash
+npm install
+```
+
+### 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 빌드
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+```
 
-## Learn More
+### 프로덕션 실행
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📝 개발 계획
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+자세한 개발 계획은 [docs/plan/2026-02-11-nextjs-개발계획.md](./docs/plan/2026-02-11-nextjs-개발계획.md)를 참고하세요.
 
-## Deploy on Vercel
+## ⚠️ 주의사항
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **HTTPS 필수**: getDisplayMedia는 HTTPS 환경에서만 동작합니다.
+- **브라우저 호환성**: Chrome, Edge, Firefox에서 테스트되었습니다.
+- **로컬 저장**: MVP 버전은 로컬 저장만 지원합니다 (서버 업로드 제외).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 라이선스
+
+이 프로젝트는 개인 프로젝트입니다.

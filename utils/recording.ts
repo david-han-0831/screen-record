@@ -75,13 +75,13 @@ export const createMediaRecorder = (
         : DEFAULT_VIDEO_BITRATE;
   const videoBitsPerSecond = bitrate;
 
-  const options: MediaRecorderOptions = {
+  const recorderOptions: MediaRecorderOptions = {
     mimeType: 'video/webm;codecs=vp9',
     videoBitsPerSecond,
   };
 
   // 지원되는 MIME 타입 확인
-  let mimeType: string = options.mimeType ?? 'video/webm;codecs=vp9';
+  let mimeType: string = recorderOptions.mimeType ?? 'video/webm;codecs=vp9';
   if (!MediaRecorder.isTypeSupported(mimeType)) {
     mimeType = 'video/webm';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -90,7 +90,7 @@ export const createMediaRecorder = (
   }
 
   const recorder = new MediaRecorder(stream, {
-    ...options,
+    ...recorderOptions,
     mimeType,
   });
 

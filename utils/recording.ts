@@ -57,7 +57,7 @@ export const createMediaRecorder = (
   };
 
   // 지원되는 MIME 타입 확인
-  let mimeType = options.mimeType;
+  let mimeType: string = options.mimeType ?? 'video/webm;codecs=vp9';
   if (!MediaRecorder.isTypeSupported(mimeType)) {
     mimeType = 'video/webm';
     if (!MediaRecorder.isTypeSupported(mimeType)) {

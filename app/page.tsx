@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePasswordValidation } from '@/hooks/usePasswordValidation';
 import PasswordInput from '@/components/ui/PasswordInput';
@@ -7,19 +8,33 @@ import PasswordInput from '@/components/ui/PasswordInput';
 // TODO: 실제 환경에서는 환경변수나 서버에서 관리
 const CORRECT_PASSWORD = 'test1234';
 
+/** 화질 옵션: 2.5 / 1.5 / 1.25 Mbps (퀄리티 비교용) */
+export const RECORDING_QUALITY_OPTIONS = [
+  { label: '2.5 Mbps (고화질)', value: 2_500_000, description: '화질 우선, 파일 크기 큼' },
+  { label: '1.5 Mbps (중간)', value: 1_500_000, description: '화질·용량 균형' },
+  { label: '1.25 Mbps (저용량)', value: 1_250_000, description: '용량 절감, 화질 다소 낮음' },
+] as const;
+
+const STORAGE_KEY_BITRATE = 'recording_bitrate';
+
 /**
  * [S01] 시험 대기 화면
- * 시험 시작 전 대기 및 비밀번호 입력
+ * 시험 시작 전 대기, 비밀번호 입력, 녹화 화질 선택
  */
 export default function Home() {
   const router = useRouter();
   const { password, isValid, error, validatePassword } = usePasswordValidation(
     CORRECT_PASSWORD
   );
+  const [selectedBitrate, setSelectedBitrate] = useState<number>(
+    RECORDING_QUALITY_OPTIONS[0].value
+  );
 
   const handleStart = () => {
     if (isValid) {
-      // 다음 단계로 이동 (화면 공유 요청)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(STORAGE_KEY_BITRATE, String(selectedBitrate));
+      }
       router.push('/recording');
     }
   };
@@ -62,6 +77,41 @@ export default function Home() {
               error={error}
               placeholder="비밀번호를 입력하세요"
             />
+          </div>
+
+          {/* 녹화 화질 선택 (퀄리티 비교용) */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              녹화 화질 (비트레이트)
+            </label>
+            <p className="text-xs text-gray-500">
+              낮을수록 파일 크기 감소, 화질은 다소 낮아질 수 있습니다.
+            </p>
+            <div className="space-y-2">
+              {RECORDING_QUALITY_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    selectedBitrate === opt.value
+                      ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                      : 'border-gray-200 hover:border-gray-300 bg-gray-50/50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="quality"
+                    value={opt.value}
+                    checked={selectedBitrate === opt.value}
+                    onChange={() => setSelectedBitrate(opt.value)}
+                    className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">{opt.label}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Start 버튼 */}

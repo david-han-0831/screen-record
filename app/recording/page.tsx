@@ -106,6 +106,33 @@ export default function RecordingPage() {
               </div>
             </div>
 
+            {/* 구글 폼(답안지) 링크 - NEXT_PUBLIC_GOOGLE_FORM_URL 설정 시 표시 */}
+            {process.env.NEXT_PUBLIC_GOOGLE_FORM_URL && (
+              <div className="flex justify-center">
+                <a
+                  href={process.env.NEXT_PUBLIC_GOOGLE_FORM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  답안지(구글 폼) 열기
+                </a>
+              </div>
+            )}
+
             {/* 시험지 영역 (PDF 표시 영역) */}
             <div className="bg-white rounded-lg shadow-lg p-8 min-h-[600px]">
               <div className="text-center text-gray-500 py-20">

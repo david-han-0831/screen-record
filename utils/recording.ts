@@ -43,17 +43,41 @@ export const requestScreenShare = async (): Promise<MediaStream> => {
   }
 };
 
+/** 기본 비트레이트 2.5Mbps (환경변수·화면 선택 없을 때) */
+const DEFAULT_VIDEO_BITRATE = 2_500_000;
+
+export interface CreateMediaRecorderOptions {
+  /** 비트레이트(bps). 화면에서 선택한 값 또는 env 우선 사용 */
+  videoBitsPerSecond?: number;
+}
+
 /**
  * MediaRecorder 초기화
+ * 비트레이트: options > NEXT_PUBLIC_RECORDING_VIDEO_BITRATE > 기본값 2.5Mbps
  */
 export const createMediaRecorder = (
   stream: MediaStream,
   onDataAvailable: (event: BlobEvent) => void,
-  onStop: () => void
+  onStop: () => void,
+  options?: CreateMediaRecorderOptions
 ): MediaRecorder => {
+  const override = options?.videoBitsPerSecond;
+  const envBitrate =
+    typeof process !== 'undefined' &&
+    process.env.NEXT_PUBLIC_RECORDING_VIDEO_BITRATE
+      ? Number(process.env.NEXT_PUBLIC_RECORDING_VIDEO_BITRATE)
+      : null;
+  const bitrate =
+    override != null && Number.isFinite(override) && override > 0
+      ? override
+      : envBitrate != null && Number.isFinite(envBitrate) && envBitrate > 0
+        ? envBitrate
+        : DEFAULT_VIDEO_BITRATE;
+  const videoBitsPerSecond = bitrate;
+
   const options: MediaRecorderOptions = {
     mimeType: 'video/webm;codecs=vp9',
-    videoBitsPerSecond: 2500000, // 2.5Mbps
+    videoBitsPerSecond,
   };
 
   // 지원되는 MIME 타입 확인

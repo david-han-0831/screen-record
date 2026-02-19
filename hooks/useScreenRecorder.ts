@@ -92,7 +92,15 @@ export const useScreenRecorder = (): UseScreenRecorderReturn => {
         }
       };
 
-      // 3. MediaRecorder 초기화
+      // 3. MediaRecorder 초기화 (화면에서 선택한 비트레이트 우선)
+      const storedBitrate =
+        typeof sessionStorage !== 'undefined'
+          ? sessionStorage.getItem('recording_bitrate')
+          : null;
+      const videoBitsPerSecond = storedBitrate
+        ? Number(storedBitrate)
+        : undefined;
+
       const mediaRecorder = createMediaRecorder(
         mediaStream,
         (event) => {
@@ -122,7 +130,10 @@ export const useScreenRecorder = (): UseScreenRecorderReturn => {
             setIsRecording(false);
             isRecordingRef.current = false;
           }, 200);
-        }
+        },
+        typeof videoBitsPerSecond === 'number' && Number.isFinite(videoBitsPerSecond)
+          ? { videoBitsPerSecond }
+          : undefined
       );
 
       setRecorder(mediaRecorder);

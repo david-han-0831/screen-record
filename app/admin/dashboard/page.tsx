@@ -115,11 +115,11 @@ export default function AdminDashboardPage() {
             );
           },
           (err) => {
-            console.error('exam_sessions subscription error', err);
+            // console.error('exam_sessions subscription error', err);
           }
         );
       } catch (e) {
-        console.error('Load settings error', e);
+        // console.error('Load settings error', e);
       } finally {
         setLoading(false);
       }

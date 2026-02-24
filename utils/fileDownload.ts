@@ -29,7 +29,7 @@ export const downloadRecording = (blob: Blob, studentId: string = 'student'): vo
     localStorage.setItem('recording_download_success', 'true');
     localStorage.setItem('recording_file_name', fileName);
   } catch (error) {
-    console.error('파일 다운로드 중 오류:', error);
+    // console.error('파일 다운로드 중 오류:', error);
     localStorage.setItem('recording_download_success', 'false');
     throw new Error('파일 다운로드에 실패했습니다.');
   }

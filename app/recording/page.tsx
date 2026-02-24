@@ -61,9 +61,9 @@ export default function RecordingPage() {
       });
       if (cancelled) return;
       if (result.ok) {
-        console.log('Drive 업로드 완료:', result.fileName);
+        // console.log('Drive 업로드 완료:', result.fileName);
       } else {
-        console.warn('Drive 업로드 실패:', result.error);
+        // console.warn('Drive 업로드 실패:', result.error);
       }
       if (!cancelled) router.push('/complete');
     })();

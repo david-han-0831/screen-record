@@ -94,7 +94,7 @@ export default function ScreenShareModal({
                 onClick={onClose}
                 className="flex-1 py-2 px-4 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
               >
-                취소
+                Cancel
               </button>
               <button
                 onClick={() => {
@@ -104,7 +104,7 @@ export default function ScreenShareModal({
                 disabled={isStarting}
                 className="flex-1 py-2 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
-                다시 시도
+                Try Again
               </button>
             </div>
           )}

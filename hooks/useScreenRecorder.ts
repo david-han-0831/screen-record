@@ -120,11 +120,11 @@ export const useScreenRecorder = (): UseScreenRecorderReturn => {
                 // 100바이트 이상이면 유효한 파일로 간주
                 setRecordingBlob(finalBlob);
               } else {
-                console.warn('녹화된 데이터가 너무 작습니다:', finalBlob.size);
+                // console.warn('녹화된 데이터가 너무 작습니다:', finalBlob.size);
                 setError('Recorded data is insufficient. Please try again.');
               }
             } else {
-              console.warn('녹화된 chunks가 없습니다');
+              // console.warn('녹화된 chunks가 없습니다');
               setError('No recorded data. Please try again.');
             }
             setIsRecording(false);

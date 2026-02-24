@@ -98,7 +98,7 @@ export default function ScreenShareModal({
               </button>
               <button
                 onClick={() => {
-                  hasStartedRef.current = false;
+                  hasStartedRef.current = true;
                   onStart();
                 }}
                 disabled={isStarting}

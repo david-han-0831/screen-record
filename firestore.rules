@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 관리자: Firestore users/{uid} 문서의 role == 'admin' 인 사용자만 허용
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // 본인 사용자 문서만 읽기 (로그인 시 role 확인용)
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // 앱 설정 (access code, stop passwords): 관리자만 읽기/쓰기
+    match /settings/{document} {
+      allow read, write: if isAdmin();
+    }
+
+    // 시험 시작 이력: 관리자만 읽기. 생성은 클라이언트 불가(API에서 Admin SDK로만 생성)
+    match /exam_sessions/{document} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+  }
+}

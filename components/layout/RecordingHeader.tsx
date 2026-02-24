@@ -1,13 +1,18 @@
 'use client';
 
+import { RECORDING_PAGE_MESSAGES as R } from '@/lib/messages';
+
 interface RecordingHeaderProps {
   elapsedTime: string;
+  /** Part 2일 때 "Resume recording" 표시 (2026-02-24 수정사항) */
+  part?: 'Part 1' | 'Part 2';
 }
 
 /**
  * 녹화 중 상단 고정 바 컴포넌트
  */
-export default function RecordingHeader({ elapsedTime }: RecordingHeaderProps) {
+export default function RecordingHeader({ elapsedTime, part }: RecordingHeaderProps) {
+  const label = part === 'Part 2' ? R.recordingResumedLabel : R.recordingLabel;
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white shadow-lg">
       <div className="container mx-auto px-4 py-3">
@@ -17,7 +22,7 @@ export default function RecordingHeader({ elapsedTime }: RecordingHeaderProps) {
               <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
               <span className="font-bold text-lg">REC</span>
             </div>
-            <span className="text-sm opacity-90">녹화 중</span>
+            <span className="text-sm opacity-90">{label}</span>
           </div>
           <div className="font-mono text-lg font-semibold">{elapsedTime}</div>
         </div>

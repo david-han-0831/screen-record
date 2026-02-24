@@ -17,7 +17,7 @@ export default function PasswordInput({
   value,
   onChange,
   error,
-  placeholder = '비밀번호를 입력하세요',
+  placeholder = 'Enter password',
   disabled = false,
 }: PasswordInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {

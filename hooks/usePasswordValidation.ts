@@ -2,19 +2,24 @@
 
 import { useState, useCallback } from 'react';
 
+export interface UsePasswordValidationOptions {
+  wrongPasswordMessage?: string;
+}
+
 /**
  * 비밀번호 검증 커스텀 훅
  * @param correctPassword - 올바른 비밀번호
- * @returns 비밀번호 검증 관련 상태 및 함수
+ * @param options - wrongPasswordMessage: 불일치 시 표시할 메시지 (기본: 영어)
  */
-export const usePasswordValidation = (correctPassword: string) => {
+export const usePasswordValidation = (
+  correctPassword: string,
+  options?: UsePasswordValidationOptions
+) => {
+  const wrongMessage = options?.wrongPasswordMessage ?? 'Incorrect password.';
   const [password, setPassword] = useState('');
   const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState('');
 
-  /**
-   * 비밀번호 검증
-   */
   const validatePassword = useCallback(
     (inputPassword: string) => {
       setPassword(inputPassword);
@@ -30,10 +35,10 @@ export const usePasswordValidation = (correctPassword: string) => {
         setError('');
       } else {
         setIsValid(false);
-        setError('비밀번호가 일치하지 않습니다.');
+        setError(wrongMessage);
       }
     },
-    [correctPassword]
+    [correctPassword, wrongMessage]
   );
 
   /**

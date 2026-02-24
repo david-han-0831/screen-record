@@ -3,17 +3,17 @@
 import { useEffect } from 'react';
 
 /**
- * 새로고침 방지 커스텀 훅
- * @param isRecording - 녹화 중 여부
+ * 새로고침/탭 닫기 방지 커스텀 훅
+ * @param shouldPrevent - 경고를 띄울 조건 (녹화 중 또는 업로드 중)
  */
-export const usePreventRefresh = (isRecording: boolean) => {
+export const usePreventRefresh = (shouldPrevent: boolean) => {
   useEffect(() => {
-    if (!isRecording) return;
+    if (!shouldPrevent) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      // Chrome에서는 기본 메시지만 표시됨
-      e.returnValue = '시험이 진행 중입니다. 페이지를 나가시겠습니까?';
+      // Chrome 등에서는 브라우저 기본 문구만 표시됨
+      e.returnValue = '';
       return e.returnValue;
     };
 
@@ -22,5 +22,5 @@ export const usePreventRefresh = (isRecording: boolean) => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isRecording]);
+  }, [shouldPrevent]);
 };

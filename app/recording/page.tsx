@@ -6,8 +6,11 @@ import { useScreenRecorder } from '@/hooks/useScreenRecorder';
 import { useRecordingTimer } from '@/hooks/useRecordingTimer';
 import { usePreventRefresh } from '@/hooks/usePreventRefresh';
 import ScreenShareModal from '@/components/ui/ScreenShareModal';
+import FinishExamModal from '@/components/ui/FinishExamModal';
 import RecordingHeader from '@/components/layout/RecordingHeader';
-import { downloadRecording } from '@/utils/fileDownload';
+import { uploadRecordingToDrive } from '@/utils/uploadToDrive';
+import { getStudentInfoFromStorage } from '@/utils/studentStorage';
+import { RECORDING_PAGE_MESSAGES as R } from '@/lib/messages';
 
 /**
  * [S03] 시험 진행 화면
@@ -16,7 +19,8 @@ import { downloadRecording } from '@/utils/fileDownload';
 export default function RecordingPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(true);
-  const [studentId] = useState('student'); // TODO: 실제로는 사용자 정보에서 가져오기
+  const [showFinishExamModal, setShowFinishExamModal] = useState(false);
+  const [studentInfo] = useState(() => getStudentInfoFromStorage());
 
   const {
     isRecording,
@@ -30,8 +34,8 @@ export default function RecordingPage() {
 
   const { formattedTime } = useRecordingTimer(isRecording);
 
-  // 새로고침 방지
-  usePreventRefresh(isRecording);
+  // 새로고침/탭 닫기 방지 (녹화 중 + 업로드 중)
+  usePreventRefresh(isRecording || !!recordingBlob);
 
   // 녹화 시작 성공 시 모달 닫기
   useEffect(() => {
@@ -40,31 +44,65 @@ export default function RecordingPage() {
     }
   }, [isRecording, isStarting]);
 
-  // 녹화 중지 시 파일 다운로드 및 종료 페이지로 이동
+  // 녹화 중지 시 Drive 업로드만 진행 후 종료 페이지로 이동 (로컬 다운로드 없음)
   useEffect(() => {
-    if (recordingBlob) {
-      try {
-        downloadRecording(recordingBlob, studentId);
-        router.push('/complete');
-      } catch (err) {
-        console.error('파일 다운로드 실패:', err);
+    if (!recordingBlob) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const result = await uploadRecordingToDrive({
+        blob: recordingBlob,
+        studentId: studentInfo.studentId,
+        firstName: studentInfo.firstName,
+        lastName: studentInfo.lastName,
+        email: studentInfo.email,
+        part: studentInfo.part,
+      });
+      if (cancelled) return;
+      if (result.ok) {
+        console.log('Drive 업로드 완료:', result.fileName);
+      } else {
+        console.warn('Drive 업로드 실패:', result.error);
       }
-    }
-  }, [recordingBlob, studentId, router]);
+      if (!cancelled) router.push('/complete');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recordingBlob, studentInfo, router]);
 
   // 화면 공유 중단 감지
   useEffect(() => {
-    if (error && error.includes('화면 공유가 중단되었습니다')) {
-      // 자동으로 녹화 중지 및 파일 저장
-      if (recordingBlob) {
-        downloadRecording(recordingBlob, studentId);
-      }
-      router.push('/complete');
-    }
-  }, [error, recordingBlob, studentId, router]);
+    if (!error?.includes('화면 공유가 중단되었습니다') || !recordingBlob) return;
 
-  const handleStop = () => {
+    (async () => {
+      await uploadRecordingToDrive({
+        blob: recordingBlob,
+        studentId: studentInfo.studentId,
+        firstName: studentInfo.firstName,
+        lastName: studentInfo.lastName,
+        email: studentInfo.email,
+        part: studentInfo.part,
+      });
+      router.push('/complete');
+    })();
+  }, [error, recordingBlob, studentInfo, router]);
+
+  const handleStopClick = () => {
+    setShowFinishExamModal(true);
+  };
+
+  const handleFinishExamConfirm = async (password: string): Promise<boolean> => {
+    const res = await fetch('/api/validate-stop-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ part: studentInfo.part, password }),
+    });
+    if (!res.ok) return false;
     stopRecording();
+    return true;
   };
 
   const handleModalClose = () => {
@@ -75,14 +113,27 @@ export default function RecordingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 업로드 중 오버레이: 녹화 중지 후 Drive 저장이 끝날 때까지 표시 */}
+      {recordingBlob && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent" />
+          <p className="mt-6 text-xl font-semibold">{R.savingRecording}</p>
+          <p className="mt-2 text-sm text-gray-300 max-w-sm text-center">
+            {R.doNotClose}
+          </p>
+        </div>
+      )}
+
       {/* 녹화 상태 표시 바 */}
-      {isRecording && <RecordingHeader elapsedTime={formattedTime} />}
+      {isRecording && (
+        <RecordingHeader elapsedTime={formattedTime} part={studentInfo.part} />
+      )}
 
       {/* 메인 콘텐츠 */}
       <main className={`container mx-auto px-4 py-8 ${isRecording ? 'pt-20' : ''}`}>
         {isRecording ? (
           <div className="max-w-4xl mx-auto space-y-6">
-            {/* 안내 문구 */}
+            {/* Caution (회의 3번) */}
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
@@ -99,14 +150,52 @@ export default function RecordingPage() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-yellow-700">
-                    <strong>주의:</strong> 화면 공유를 중단하면 시험이 자동으로 종료됩니다.
-                  </p>
+                  <p className="text-sm text-yellow-700">{R.caution}</p>
                 </div>
               </div>
             </div>
 
-            {/* 구글 폼(답안지) 링크 - NEXT_PUBLIC_GOOGLE_FORM_URL 설정 시 표시 */}
+            {/* Instruction: 항상 표시. 시험 링크는 Part 1에서만 (Part 2에서는 링크만 제외, 2026-02-24 수정사항) */}
+            <div className="bg-white rounded-lg shadow-lg p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">{R.instructionTitle}</h2>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+                <li>{R.instruction1}</li>
+                <li>{R.instruction2}</li>
+                <li>{R.instruction3}</li>
+                <li>{R.instruction4}</li>
+              </ul>
+              {studentInfo.part !== 'Part 2' &&
+                (process.env.NEXT_PUBLIC_EXAM_URL ? (
+                  <div className="pt-2">
+                    <a
+                      href={process.env.NEXT_PUBLIC_EXAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        />
+                      </svg>
+                      {R.examLinkButton}
+                    </a>
+                    <p className="mt-2 text-sm text-gray-500">{R.examLinkDescription}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">{R.examAreaPlaceholder}</p>
+                ))}
+            </div>
+
+            {/* Answer sheet (Google Form) - optional */}
             {process.env.NEXT_PUBLIC_GOOGLE_FORM_URL && (
               <div className="flex justify-center">
                 <a
@@ -128,38 +217,15 @@ export default function RecordingPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  답안지(구글 폼) 열기
+                  {R.answerSheetButton}
                 </a>
               </div>
             )}
 
-            {/* 시험지 영역 (PDF 표시 영역) */}
-            <div className="bg-white rounded-lg shadow-lg p-8 min-h-[600px]">
-              <div className="text-center text-gray-500 py-20">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <p className="mt-4 text-lg">시험지가 여기에 표시됩니다</p>
-                <p className="mt-2 text-sm text-gray-400">
-                  (실제 구현 시 PDF 뷰어 또는 이미지로 대체)
-                </p>
-              </div>
-            </div>
-
-            {/* 종료 버튼 */}
+            {/* Finish Exam: 감독관 비밀번호 입력 후에만 중지 */}
             <div className="flex justify-center gap-4">
               <button
-                onClick={handleStop}
+                onClick={handleStopClick}
                 className="px-8 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors shadow-lg flex items-center gap-2"
               >
                 <svg
@@ -181,14 +247,14 @@ export default function RecordingPage() {
                     d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
                   />
                 </svg>
-                녹화 중지
+                {R.finishExam}
               </button>
             </div>
           </div>
         ) : (
           <div className="max-w-md mx-auto text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">시험 준비 중...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
+            <p className="mt-4 text-gray-600">{R.preparing}</p>
           </div>
         )}
       </main>
@@ -200,6 +266,17 @@ export default function RecordingPage() {
         onStart={startRecording}
         isStarting={isStarting}
         error={error}
+      />
+
+      {/* Finish Exam: 비밀번호 입력 후에만 녹화 중지 */}
+      <FinishExamModal
+        isOpen={showFinishExamModal}
+        onClose={() => setShowFinishExamModal(false)}
+        onConfirm={handleFinishExamConfirm}
+        passwordLabel={R.finishExamPasswordLabel}
+        passwordPlaceholder={R.finishExamPasswordPlaceholder}
+        wrongPasswordMessage={R.finishExamWrongPassword}
+        submitLabel={R.finishExam}
       />
     </div>
   );

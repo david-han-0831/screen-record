@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# Google Cloud service account key (절대 커밋 금지)
+screen-record-488403-9dee485f403f.json
+credentials/
+*.iam.gserviceaccount.com*.json
+screen-record-56925-firebase-adminsdk-fbsvc-d5f9a66a5d.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

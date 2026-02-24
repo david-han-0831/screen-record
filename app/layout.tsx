@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "시험용 화면 녹화 시스템",
-  description: "시험 감독을 위한 화면 녹화 MVP",
+  title: "Exam Screen Recording",
+  description: "Screen recording for exam proctoring. Share your entire screen to start.",
+  openGraph: {
+    title: "Exam Screen Recording",
+    description: "Screen recording for exam proctoring. Share your entire screen to start.",
+  },
 };
 
 export default function RootLayout({

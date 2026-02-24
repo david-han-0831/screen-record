@@ -29,6 +29,5 @@ export async function getDriveClient(): Promise<drive_v3.Drive> {
     throw new Error('Set GOOGLE_APPLICATION_CREDENTIALS or GCP_SA_KEY');
   }
 
-  const authClient = await auth.getClient();
-  return google.drive({ version: 'v3', auth: authClient });
+  return google.drive({ version: 'v3', auth });
 }

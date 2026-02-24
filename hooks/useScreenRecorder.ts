@@ -121,11 +121,11 @@ export const useScreenRecorder = (): UseScreenRecorderReturn => {
                 setRecordingBlob(finalBlob);
               } else {
                 console.warn('녹화된 데이터가 너무 작습니다:', finalBlob.size);
-                setError('녹화된 데이터가 충분하지 않습니다. 다시 시도해주세요.');
+                setError('Recorded data is insufficient. Please try again.');
               }
             } else {
               console.warn('녹화된 chunks가 없습니다');
-              setError('녹화된 데이터가 없습니다. 다시 시도해주세요.');
+              setError('No recorded data. Please try again.');
             }
             setIsRecording(false);
             isRecordingRef.current = false;

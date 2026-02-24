@@ -11,8 +11,8 @@ interface ScreenShareModalProps {
 }
 
 /**
- * 화면 공유 요청 모달 컴포넌트
- * [S02] 화면 공유 요청 화면
+ * Screen share request modal
+ * [S02] Screen share request screen
  */
 export default function ScreenShareModal({
   isOpen,
@@ -25,13 +25,13 @@ export default function ScreenShareModal({
 
   useEffect(() => {
     if (isOpen && !hasStartedRef.current && !isStarting && !error) {
-      // 모달이 처음 열릴 때만 자동으로 화면 공유 요청
+      // Auto-request screen share when modal first opens
       hasStartedRef.current = true;
       onStart();
     }
   }, [isOpen, isStarting, error, onStart]);
 
-  // 모달이 닫히면 리셋
+  // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
       hasStartedRef.current = false;
@@ -65,25 +65,25 @@ export default function ScreenShareModal({
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">화면 공유 요청</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Screen Share Request</h2>
             {isStarting ? (
-              <p className="text-gray-600">화면 공유 권한을 요청하고 있습니다...</p>
+              <p className="text-gray-600">Requesting screen share permission...</p>
             ) : error ? (
               <div className="space-y-4">
                 <p className="text-red-600 font-medium">{error}</p>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
                   <p className="text-sm text-yellow-800 font-semibold mb-2">
-                    ⚠️ 중요 안내
+                    ⚠️ Important
                   </p>
                   <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                    <li>반드시 <strong>전체 화면(모니터)</strong>을 선택해주세요</li>
-                    <li>브라우저 탭이나 창을 선택하면 시험이 시작되지 않습니다</li>
+                    <li>You must select <strong>Your entire screen (monitor)</strong></li>
+                    <li>If you select a browser tab or window, the exam will not start</li>
                   </ul>
                 </div>
               </div>
             ) : (
               <p className="text-gray-600">
-                화면 공유 대화상자에서 <strong>전체 화면</strong>을 선택해주세요
+                In the screen share dialog, select <strong>Your entire screen</strong>
               </p>
             )}
           </div>
@@ -114,7 +114,7 @@ export default function ScreenShareModal({
               onClick={onClose}
               className="w-full py-2 px-4 rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
             >
-              취소
+              Cancel
             </button>
           )}
         </div>

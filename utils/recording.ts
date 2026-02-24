@@ -25,21 +25,21 @@ export const requestScreenShare = async (): Promise<MediaStream> => {
     if (settings.displaySurface !== 'monitor') {
       // 전체 화면이 아니면 스트림 중지
       stream.getTracks().forEach((track) => track.stop());
-      throw new Error('전체 화면을 선택해주세요.');
+      throw new Error('Please select your entire screen.');
     }
 
     return stream;
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === 'NotAllowedError') {
-        throw new Error('화면 공유 권한이 거부되었습니다.');
+        throw new Error('Screen share permission was denied.');
       }
       if (error.name === 'NotFoundError') {
-        throw new Error('화면 공유 장치를 찾을 수 없습니다.');
+        throw new Error('No screen share device found.');
       }
       throw error;
     }
-    throw new Error('화면 공유 요청 중 오류가 발생했습니다.');
+    throw new Error('An error occurred while requesting screen share.');
   }
 };
 

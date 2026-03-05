@@ -77,9 +77,16 @@ export async function POST(request: Request) {
 
     const errText = await putRes.text();
     console.error('Drive chunk PUT error:', putRes.status, errText);
+    let message = errText || `Upload chunk failed ${putRes.status}`;
+    try {
+      const errJson = JSON.parse(errText) as { error?: { message?: string } };
+      if (errJson?.error?.message) message = errJson.error.message;
+    } catch {
+      // use errText as-is
+    }
     return NextResponse.json(
-      { error: errText || `Upload chunk failed ${putRes.status}` },
-      { status: 500 }
+      { error: message },
+      { status: putRes.status === 404 ? 404 : 500 }
     );
   } catch (err) {
     console.error('upload-recording-chunk error:', err);

@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const token = await getDriveAccessToken();
 
     const initRes = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
       {
         method: 'POST',
         headers: {

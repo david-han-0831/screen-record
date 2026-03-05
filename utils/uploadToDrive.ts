@@ -1,7 +1,9 @@
 /**
- * 녹화 Blob을 Google Drive에 업로드 (4.5MB 한도 회피)
- * 서버는 업로드 URL만 발급하고, 실제 바이트는 브라우저 → Drive 직접 전송
+ * 녹화 Blob을 Google Drive에 업로드 (4.5MB 한도 + CORS 회피)
+ * 브라우저 → Drive 직접 PUT은 CORS로 불가하므로, 4MB 청크로 나눠 우리 API 경유 → 서버가 Drive에 PUT
  */
+
+const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB (Vercel 4.5MB 한도 내)
 
 export interface UploadRecordingParams {
   blob: Blob;
@@ -27,7 +29,7 @@ export async function uploadRecordingToDrive(
   const { blob, firstName, lastName, part } = params;
 
   try {
-    // 1. 서버에서 Resumable 업로드 URL만 발급 (파일 바이트는 안 보냄 → 4.5MB 한도 회피)
+    // 1. Resumable 업로드 URL 발급 (메타데이터만 전송)
     const urlRes = await fetch('/api/upload-recording-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -49,30 +51,44 @@ export async function uploadRecordingToDrive(
       return { ok: false, error: 'No upload URL received' };
     }
 
-    // 2. 브라우저에서 Drive로 직접 PUT (Vercel 경유 안 함)
+    // 2. 4MB 청크로 나눠 서버 경유 → 서버가 Drive Resumable URL로 PUT (CORS 회피)
     const total = blob.size;
-    const putRes = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'video/webm',
-        'Content-Length': String(total),
-        'Content-Range': `bytes 0-${total - 1}/${total}`,
-      },
-      body: blob,
-    });
+    let start = 0;
 
-    if (!putRes.ok) {
-      const errText = await putRes.text();
-      return { ok: false, error: errText || `Upload failed ${putRes.status}` };
+    while (start < total) {
+      const end = Math.min(start + CHUNK_SIZE, total) - 1;
+      const chunk = blob.slice(start, end + 1);
+      const contentRange = `bytes ${start}-${end}/${total}`;
+
+      const formData = new FormData();
+      formData.append('uploadUrl', uploadUrl);
+      formData.append('contentRange', contentRange);
+      formData.append('chunk', chunk, 'chunk.webm');
+
+      const chunkRes = await fetch('/api/upload-recording-chunk', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const chunkData = await chunkRes.json();
+
+      if (!chunkRes.ok) {
+        return { ok: false, error: chunkData.error || chunkRes.statusText };
+      }
+
+      if (chunkData.done) {
+        return {
+          ok: true,
+          fileId: chunkData.fileId,
+          fileName: chunkData.fileName ?? fileName,
+          webViewLink: chunkData.webViewLink,
+        };
+      }
+
+      start = end + 1;
     }
 
-    const fileData = await putRes.json() as { id?: string; name?: string; webViewLink?: string };
-    return {
-      ok: true,
-      fileId: fileData.id,
-      fileName: fileData.name ?? fileName,
-      webViewLink: fileData.webViewLink,
-    };
+    return { ok: false, error: 'Upload did not complete' };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Upload failed';
     return { ok: false, error: message };

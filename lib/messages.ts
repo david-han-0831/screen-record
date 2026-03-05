@@ -72,6 +72,8 @@ export const RECORDING_PAGE_MESSAGES = {
   // Upload overlay (already English, keep consistent)
   savingRecording: 'Saving your recording...',
   doNotClose: 'Do not close this window until saving is complete.',
+  uploadFailed: 'Upload failed. Please check your connection and try again.',
+  retryUpload: 'Retry upload',
   // Part 2: 녹화 재개 (2026-02-24 수정사항)
   recordingLabel: 'Recording',
   recordingResumedLabel: 'Resume recording',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useScreenRecorder } from '@/hooks/useScreenRecorder';
 import { useRecordingTimer } from '@/hooks/useRecordingTimer';
@@ -20,6 +20,8 @@ export default function RecordingPage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(true);
   const [showFinishExamModal, setShowFinishExamModal] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [studentInfo] = useState(() => getStudentInfoFromStorage());
 
   const {
@@ -44,51 +46,39 @@ export default function RecordingPage() {
     }
   }, [isRecording, isStarting]);
 
-  // 녹화 중지 시 Drive 업로드만 진행 후 종료 페이지로 이동 (로컬 다운로드 없음)
+  // 녹화 중지 시 Drive 업로드 진행. 성공 시에만 종료 페이지로 이동
+  const [uploadRetryKey, setUploadRetryKey] = useState(0);
+  const uploadInProgressRef = useRef(false);
+  const doUpload = useCallback(async () => {
+    if (!recordingBlob || uploadInProgressRef.current) return;
+    uploadInProgressRef.current = true;
+    setUploadError(null);
+    setIsUploading(true);
+    const result = await uploadRecordingToDrive({
+      blob: recordingBlob,
+      firstName: studentInfo.firstName,
+      lastName: studentInfo.lastName,
+      part: studentInfo.part,
+    });
+    setIsUploading(false);
+    uploadInProgressRef.current = false;
+    if (result.ok) {
+      router.push('/complete');
+    } else {
+      setUploadError(result.error ?? R.uploadFailed);
+    }
+  }, [recordingBlob, studentInfo.firstName, studentInfo.lastName, studentInfo.part, router]);
+
   useEffect(() => {
     if (!recordingBlob) return;
+    doUpload();
+  }, [recordingBlob, uploadRetryKey, doUpload]);
 
-    let cancelled = false;
-
-    (async () => {
-      const result = await uploadRecordingToDrive({
-        blob: recordingBlob,
-        studentId: studentInfo.studentId,
-        firstName: studentInfo.firstName,
-        lastName: studentInfo.lastName,
-        email: studentInfo.email,
-        part: studentInfo.part,
-      });
-      if (cancelled) return;
-      if (result.ok) {
-        // console.log('Drive 업로드 완료:', result.fileName);
-      } else {
-        // console.warn('Drive 업로드 실패:', result.error);
-      }
-      if (!cancelled) router.push('/complete');
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [recordingBlob, studentInfo, router]);
-
-  // 화면 공유 중단 감지
+  // 화면 공유 중단 감지 시에도 업로드 후 성공 시에만 완료 페이지로
   useEffect(() => {
     if (!error?.includes('화면 공유가 중단되었습니다') || !recordingBlob) return;
-
-    (async () => {
-      await uploadRecordingToDrive({
-        blob: recordingBlob,
-        studentId: studentInfo.studentId,
-        firstName: studentInfo.firstName,
-        lastName: studentInfo.lastName,
-        email: studentInfo.email,
-        part: studentInfo.part,
-      });
-      router.push('/complete');
-    })();
-  }, [error, recordingBlob, studentInfo, router]);
+    doUpload();
+  }, [error, recordingBlob, doUpload]);
 
   const handleStopClick = () => {
     setShowFinishExamModal(true);
@@ -113,14 +103,32 @@ export default function RecordingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 업로드 중 오버레이: 녹화 중지 후 Drive 저장이 끝날 때까지 표시 */}
+      {/* 업로드 중/실패 오버레이: 녹화 중지 후 Drive 저장이 끝날 때까지 또는 실패 시 표시 */}
       {recordingBlob && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent" />
-          <p className="mt-6 text-xl font-semibold">{R.savingRecording}</p>
-          <p className="mt-2 text-sm text-gray-300 max-w-sm text-center">
-            {R.doNotClose}
-          </p>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/90 text-white px-4">
+          {uploadError ? (
+            <>
+              <p className="text-xl font-semibold text-red-300">{R.uploadFailed}</p>
+              <p className="mt-2 text-sm text-gray-300 max-w-md text-center break-words">
+                {uploadError}
+              </p>
+              <button
+                type="button"
+                onClick={() => setUploadRetryKey((k) => k + 1)}
+                className="mt-6 px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100"
+              >
+                {R.retryUpload}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent" />
+              <p className="mt-6 text-xl font-semibold">{R.savingRecording}</p>
+              <p className="mt-2 text-sm text-gray-300 max-w-sm text-center">
+                {R.doNotClose}
+              </p>
+            </>
+          )}
         </div>
       )}
 
